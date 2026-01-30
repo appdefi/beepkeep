@@ -1229,9 +1229,11 @@
             font-size: 11px;
             line-height: 1.6;
             color: var(--text-secondary);
+            min-height: 300px;
             max-height: 600px;
             overflow: auto;
             white-space: pre-wrap;
+            word-break: break-word;
         }
 
         .patch-toolbar {
@@ -1643,7 +1645,7 @@
             .ratio-control { flex-wrap: wrap; gap: 8px; }
             .ratio-track { flex: 1 1 100%; order: 1; }
             .chord-card { padding: 16px; }
-            .patch-preview { font-size: 10px; max-height: 400px; }
+            .patch-preview { font-size: 10px; min-height: 200px; max-height: 50vh; }
         }
     </style>
 </head>
@@ -3052,15 +3054,12 @@ const closeLossSounds = ${JSON.stringify(state.positions.closeLoss, null, 2)};
 function renderExport() {
     const validation = validatePatch();
     const statusEl = document.getElementById('validationStatus');
-    const detailsEl = document.getElementById('validationDetails');
     const previewEl = document.getElementById('patchPreview');
 
     statusEl.className = 'validation-status ' + (validation.valid ? 'valid' : 'invalid');
-    detailsEl.innerHTML = validation.valid 
-        ? '<span style="color: var(--positive);">All checks passed</span>'
-        : validation.errors.map(e => `<div style="color: var(--negative);">✕ ${e}</div>`).join('');
+    statusEl.querySelector('.validation-label').textContent = validation.valid ? 'Schema Valid' : 'Schema Invalid';
     
-    previewEl.textContent = validation.valid ? generatePatch() : '// Fix validation errors first';
+    previewEl.textContent = validation.valid ? generatePatch() : '// Fix validation errors first\n\n' + validation.errors.join('\n');
 }
 
 function copyPatch() {
