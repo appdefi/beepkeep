@@ -1209,9 +1209,15 @@
            PATCH BAY (Export)
            ============================================ */
         .patch-bay {
-            display: grid;
-            grid-template-columns: 1fr 300px;
-            gap: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .patch-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
         }
 
         .patch-preview {
@@ -1228,24 +1234,28 @@
             white-space: pre-wrap;
         }
 
-        .patch-sidebar {
+        .patch-toolbar {
             display: flex;
-            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
             gap: 16px;
         }
 
-        .validation-card {
-            background: var(--bg-surface);
-            border: 1px solid var(--border-subtle);
-            border-radius: var(--radius-lg);
-            padding: 20px;
+        .patch-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
         }
 
         .validation-status {
             display: flex;
             align-items: center;
-            gap: 12px;
-            margin-bottom: 16px;
+            gap: 8px;
+            padding: 8px 12px;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
         }
 
         .validation-status.valid .led { background: var(--positive); box-shadow: 0 0 8px var(--positive-glow); }
@@ -1435,7 +1445,7 @@
             background: var(--bg-elevated);
             border: 1px solid var(--border-dim);
             border-radius: var(--radius-sm);
-            padding: 10px 14px;
+            padding: 10px 10px;
             font-size: 11px;
             font-style: normal;
             font-weight: 400;
@@ -1602,7 +1612,6 @@
            ============================================ */
         @media (max-width: 1200px) {
             .chord-builder { grid-template-columns: 1fr; }
-            .patch-bay { grid-template-columns: 1fr; }
         }
 
         @media (max-width: 768px) {
@@ -1610,6 +1619,25 @@
             .nav { padding: 12px 16px; overflow-x: auto; }
             .main { padding: 16px; }
             .fx-rack { grid-template-columns: 1fr; }
+            .patch-toolbar { flex-direction: column; align-items: stretch; }
+            .patch-actions { flex-direction: column; }
+            .patch-actions .btn { width: 100%; }
+            .validation-status { justify-content: center; }
+            .scale-buttons { flex-wrap: wrap; justify-content: center; }
+            .level-row { flex-direction: column; gap: 12px; }
+            .level-row .level-label { min-width: auto; }
+        }
+
+        @media (max-width: 480px) {
+            .header { padding: 12px; gap: 12px; }
+            .logo-text { font-size: 18px; }
+            .nav { gap: 4px; }
+            .nav-item { padding: 10px 12px; font-size: 11px; }
+            .main { padding: 12px; }
+            .ratio-control { flex-wrap: wrap; gap: 8px; }
+            .ratio-track { flex: 1 1 100%; order: 1; }
+            .chord-card { padding: 16px; }
+            .patch-preview { font-size: 10px; max-height: 400px; }
         }
     </style>
 </head>
@@ -1642,7 +1670,7 @@
         <!-- TRADES PANEL -->
         <section id="panel-trades" class="panel active">
             <div class="ratio-control">
-                <span class="ratio-label">Ratio <span class="info-icon" data-tooltip="Scales sound intensity — simulates different trade sizes">i</span></span>
+                <span class="ratio-label">Ratio <span class="info-icon" data-tooltip="Scales sound intensity to simulate different trade sizes">i</span></span>
                 <div class="ratio-track" id="tradeRatioTrack">
                     <div class="ratio-fill" style="width: 31.03%;"></div>
                     <div class="ratio-thumb" style="left: 31.03%;"></div>
@@ -1658,7 +1686,7 @@
         <!-- LIQUIDATIONS PANEL -->
         <section id="panel-liquidations" class="panel">
             <div class="ratio-control">
-                <span class="ratio-label">Ratio <span class="info-icon" data-tooltip="Scales sound intensity — simulates different liquidation sizes">i</span></span>
+                <span class="ratio-label">Ratio <span class="info-icon" data-tooltip="Scales sound intensity to simulate different liquidation sizes">i</span></span>
                 <div class="ratio-track" id="liqRatioTrack">
                     <div class="ratio-fill" style="width: 31.03%;"></div>
                     <div class="ratio-thumb" style="left: 31.03%;"></div>
@@ -1685,22 +1713,21 @@
         <!-- PATCH BAY PANEL -->
         <section id="panel-export" class="panel">
             <div class="patch-bay">
-                <div class="patch-preview" id="patchPreview"></div>
-                <div class="patch-sidebar">
-                    <div class="validation-card">
-                        <div class="validation-status" id="validationStatus">
-                            <div class="led"></div>
-                            <span class="validation-label">Schema Validation</span>
-                        </div>
-                        <div id="validationDetails" style="font-size: 12px; color: var(--text-secondary);"></div>
-                    </div>
+                <div class="patch-toolbar">
+                    <input type="file" id="patchFileInput" accept=".ts,.json" style="display: none;" onchange="loadFromFile(event)">
                     <div class="patch-actions">
                         <button class="btn btn-primary" onclick="copyPatch()">📋 Copy Patch</button>
                         <button class="btn btn-default" onclick="downloadPatch()">💾 Download .ts</button>
+                        <button class="btn btn-default" onclick="document.getElementById('patchFileInput').click()">📁 Load File</button>
                         <button class="btn btn-default" onclick="saveToBrowser()">💾 Save Local</button>
                         <button class="btn btn-ghost" onclick="loadFromBrowser()">📂 Load Saved</button>
                     </div>
+                    <div class="validation-status" id="validationStatus">
+                        <div class="led"></div>
+                        <span class="validation-label">Schema Valid</span>
+                    </div>
                 </div>
+                <div class="patch-preview" id="patchPreview"></div>
             </div>
         </section>
     </main>
@@ -1816,6 +1843,42 @@ const ASTLEY_PATTERNS = {
     ]
 };
 
+// Astley position chords
+const ASTLEY_CHORDS = {
+    // Em9 ascending: E-G-B-D-F# (hopeful, building)
+    openLong: [
+        { frequency: 329.63, gain: 0.16, osc: 'triangle', fadeIn: 0.015, holdDuration: 0.25, fadeOut: 0.45, delay: 0 },      // E4
+        { frequency: 392.00, gain: 0.14, osc: 'triangle', fadeIn: 0.015, holdDuration: 0.25, fadeOut: 0.45, delay: 0.008 },  // G4
+        { frequency: 493.88, gain: 0.13, osc: 'triangle', fadeIn: 0.015, holdDuration: 0.25, fadeOut: 0.45, delay: 0.016 },  // B4
+        { frequency: 587.33, gain: 0.11, osc: 'sine', fadeIn: 0.015, holdDuration: 0.25, fadeOut: 0.45, delay: 0.024 },      // D5
+        { frequency: 739.99, gain: 0.10, osc: 'sine', fadeIn: 0.015, holdDuration: 0.28, fadeOut: 0.5, delay: 0.032 }        // F#5
+    ],
+    // A major descending: E-C#-A-E-A (bold, descending)
+    openShort: [
+        { frequency: 659.25, gain: 0.16, osc: 'triangle', fadeIn: 0.015, holdDuration: 0.25, fadeOut: 0.45, delay: 0 },      // E5
+        { frequency: 554.37, gain: 0.14, osc: 'triangle', fadeIn: 0.015, holdDuration: 0.25, fadeOut: 0.45, delay: 0.008 },  // C#5
+        { frequency: 440.00, gain: 0.13, osc: 'triangle', fadeIn: 0.015, holdDuration: 0.25, fadeOut: 0.45, delay: 0.016 },  // A4
+        { frequency: 329.63, gain: 0.11, osc: 'sine', fadeIn: 0.015, holdDuration: 0.25, fadeOut: 0.45, delay: 0.024 },      // E4
+        { frequency: 220.00, gain: 0.10, osc: 'sine', fadeIn: 0.015, holdDuration: 0.28, fadeOut: 0.5, delay: 0.032 }        // A3
+    ],
+    // F#m9 ascending: F#-A-C#-E-G# (triumphant, never let you down)
+    closeProfit: [
+        { frequency: 369.99, gain: 0.17, osc: 'triangle', fadeIn: 0.012, holdDuration: 0.3, fadeOut: 0.55, delay: 0 },       // F#4
+        { frequency: 440.00, gain: 0.15, osc: 'triangle', fadeIn: 0.012, holdDuration: 0.3, fadeOut: 0.55, delay: 0.006 },   // A4
+        { frequency: 554.37, gain: 0.14, osc: 'triangle', fadeIn: 0.012, holdDuration: 0.3, fadeOut: 0.55, delay: 0.012 },   // C#5
+        { frequency: 659.25, gain: 0.12, osc: 'sine', fadeIn: 0.012, holdDuration: 0.3, fadeOut: 0.55, delay: 0.018 },       // E5
+        { frequency: 830.61, gain: 0.10, osc: 'sine', fadeIn: 0.012, holdDuration: 0.35, fadeOut: 0.6, delay: 0.024 }        // G#5
+    ],
+    // Bm descending: F#-D-B-F#-B (melancholy, let you down)
+    closeLoss: [
+        { frequency: 739.99, gain: 0.16, osc: 'triangle', fadeIn: 0.018, holdDuration: 0.22, fadeOut: 0.5, delay: 0 },       // F#5
+        { frequency: 587.33, gain: 0.14, osc: 'triangle', fadeIn: 0.018, holdDuration: 0.22, fadeOut: 0.5, delay: 0.010 },   // D5
+        { frequency: 493.88, gain: 0.13, osc: 'triangle', fadeIn: 0.018, holdDuration: 0.22, fadeOut: 0.5, delay: 0.020 },   // B4
+        { frequency: 369.99, gain: 0.11, osc: 'sine', fadeIn: 0.018, holdDuration: 0.22, fadeOut: 0.5, delay: 0.030 },       // F#4
+        { frequency: 246.94, gain: 0.10, osc: 'sine', fadeIn: 0.018, holdDuration: 0.25, fadeOut: 0.55, delay: 0.040 }       // B3
+    ]
+};
+
 // Level note counts: L0=1, L1=2, L2=3, L3=5 (standard), 1/3/5/7 for Astley & Persian
 const LEVEL_NOTE_COUNTS = { 
     standard: [1, 2, 3, 5], 
@@ -1863,32 +1926,37 @@ const state = {
         Chorus: { enabled: false, rate: 1.5, feedback: 0.4, depth: 0.7, delay: 0.0045, bypass: 0 }
     },
     positions: {
+        // CMaj9 ascending: C-E-G-B-D (warm, hopeful)
         openLong: [
-            { frequency: 659.25, gain: 0.6, osc: 'square', fadeIn: 0.01, holdDuration: 0.1, fadeOut: 0.25, delay: 0 },
-            { frequency: 783.99, gain: 0.5, osc: 'square', fadeIn: 0.01, holdDuration: 0.1, fadeOut: 0.25, delay: 0 },
-            { frequency: 987.77, gain: 0.5, osc: 'triangle', fadeIn: 0.01, holdDuration: 0.1, fadeOut: 0.25, delay: 0 },
-            { frequency: 1318.51, gain: 0.5, osc: 'triangle', fadeIn: 0.01, holdDuration: 0.1, fadeOut: 0.2, delay: 0.08 },
-            { frequency: 220, gain: 0.45, osc: 'triangle', fadeIn: 0.005, holdDuration: 0.15, fadeOut: 0.3, delay: 0 }
+            { frequency: 261.63, gain: 0.16, osc: 'triangle', fadeIn: 0.015, holdDuration: 0.25, fadeOut: 0.45, delay: 0 },      // C4
+            { frequency: 329.63, gain: 0.14, osc: 'triangle', fadeIn: 0.015, holdDuration: 0.25, fadeOut: 0.45, delay: 0.008 },  // E4
+            { frequency: 392.00, gain: 0.13, osc: 'triangle', fadeIn: 0.015, holdDuration: 0.25, fadeOut: 0.45, delay: 0.016 },  // G4
+            { frequency: 493.88, gain: 0.11, osc: 'sine', fadeIn: 0.015, holdDuration: 0.25, fadeOut: 0.45, delay: 0.024 },      // B4
+            { frequency: 587.33, gain: 0.10, osc: 'sine', fadeIn: 0.015, holdDuration: 0.28, fadeOut: 0.5, delay: 0.032 }        // D5
         ],
+        // Amin9 descending: E-C-A-G-E (darker, cautious)
         openShort: [
-            { frequency: 587.33, gain: 0.6, osc: 'square', fadeIn: 0.01, holdDuration: 0.1, fadeOut: 0.25, delay: 0 },
-            { frequency: 698.46, gain: 0.5, osc: 'square', fadeIn: 0.01, holdDuration: 0.1, fadeOut: 0.25, delay: 0 },
-            { frequency: 880, gain: 0.5, osc: 'triangle', fadeIn: 0.01, holdDuration: 0.1, fadeOut: 0.25, delay: 0 },
-            { frequency: 440, gain: 0.5, osc: 'triangle', fadeIn: 0.01, holdDuration: 0.1, fadeOut: 0.2, delay: 0.08 },
-            { frequency: 196, gain: 0.45, osc: 'triangle', fadeIn: 0.005, holdDuration: 0.15, fadeOut: 0.3, delay: 0 }
+            { frequency: 659.25, gain: 0.16, osc: 'triangle', fadeIn: 0.015, holdDuration: 0.25, fadeOut: 0.45, delay: 0 },      // E5
+            { frequency: 523.25, gain: 0.14, osc: 'triangle', fadeIn: 0.015, holdDuration: 0.25, fadeOut: 0.45, delay: 0.008 },  // C5
+            { frequency: 440.00, gain: 0.13, osc: 'triangle', fadeIn: 0.015, holdDuration: 0.25, fadeOut: 0.45, delay: 0.016 },  // A4
+            { frequency: 392.00, gain: 0.11, osc: 'sine', fadeIn: 0.015, holdDuration: 0.25, fadeOut: 0.45, delay: 0.024 },      // G4
+            { frequency: 329.63, gain: 0.10, osc: 'sine', fadeIn: 0.015, holdDuration: 0.28, fadeOut: 0.5, delay: 0.032 }        // E4
         ],
+        // GMaj9 ascending: G-B-D-F#-A (bright, triumphant)
         closeProfit: [
-            { frequency: 783.99, gain: 0.7, osc: 'square', fadeIn: 0.01, holdDuration: 0.15, fadeOut: 0.4, delay: 0 },
-            { frequency: 987.77, gain: 0.6, osc: 'square', fadeIn: 0.01, holdDuration: 0.15, fadeOut: 0.4, delay: 0 },
-            { frequency: 1174.66, gain: 0.5, osc: 'triangle', fadeIn: 0.01, holdDuration: 0.15, fadeOut: 0.4, delay: 0 },
-            { frequency: 1567.98, gain: 0.6, osc: 'triangle', fadeIn: 0.01, holdDuration: 0.2, fadeOut: 0.5, delay: 0.1 },
-            { frequency: 261.63, gain: 0.45, osc: 'triangle', fadeIn: 0.01, holdDuration: 0.3, fadeOut: 0.5, delay: 0 }
+            { frequency: 392.00, gain: 0.17, osc: 'triangle', fadeIn: 0.012, holdDuration: 0.3, fadeOut: 0.55, delay: 0 },       // G4
+            { frequency: 493.88, gain: 0.15, osc: 'triangle', fadeIn: 0.012, holdDuration: 0.3, fadeOut: 0.55, delay: 0.006 },   // B4
+            { frequency: 587.33, gain: 0.14, osc: 'triangle', fadeIn: 0.012, holdDuration: 0.3, fadeOut: 0.55, delay: 0.012 },   // D5
+            { frequency: 739.99, gain: 0.12, osc: 'sine', fadeIn: 0.012, holdDuration: 0.3, fadeOut: 0.55, delay: 0.018 },       // F#5
+            { frequency: 880.00, gain: 0.10, osc: 'sine', fadeIn: 0.012, holdDuration: 0.35, fadeOut: 0.6, delay: 0.024 }        // A5
         ],
+        // Bdim7 descending: D-B-Ab-F-D (tense, failure)
         closeLoss: [
-            { frequency: 587.33, gain: 0.7, osc: 'sawtooth', fadeIn: 0.01, holdDuration: 0.15, fadeOut: 0.4, delay: 0 },
-            { frequency: 466.16, gain: 0.6, osc: 'sawtooth', fadeIn: 0.01, holdDuration: 0.15, fadeOut: 0.4, delay: 0.05 },
-            { frequency: 349.23, gain: 0.5, osc: 'square', fadeIn: 0.01, holdDuration: 0.2, fadeOut: 0.5, delay: 0.1 },
-            { frequency: 110, gain: 0.5, osc: 'sawtooth', fadeIn: 0.01, holdDuration: 0.3, fadeOut: 0.6, delay: 0 }
+            { frequency: 587.33, gain: 0.16, osc: 'triangle', fadeIn: 0.018, holdDuration: 0.22, fadeOut: 0.5, delay: 0 },       // D5
+            { frequency: 493.88, gain: 0.14, osc: 'triangle', fadeIn: 0.018, holdDuration: 0.22, fadeOut: 0.5, delay: 0.010 },   // B4
+            { frequency: 415.30, gain: 0.13, osc: 'triangle', fadeIn: 0.018, holdDuration: 0.22, fadeOut: 0.5, delay: 0.020 },   // Ab4
+            { frequency: 349.23, gain: 0.11, osc: 'sine', fadeIn: 0.018, holdDuration: 0.22, fadeOut: 0.5, delay: 0.030 },       // F4
+            { frequency: 293.66, gain: 0.10, osc: 'sine', fadeIn: 0.018, holdDuration: 0.25, fadeOut: 0.55, delay: 0.040 }       // D4
         ]
     },
     ratios: { trade: 1, liq: 1 }
@@ -2244,12 +2312,21 @@ function renderFxRack() {
         ]
     };
     
+    const displayNames = {
+        PingPongDelay: 'PONGUS',
+        HighPassFilter: 'DE-FART',
+        LowPassFilter: 'DE-SCREECH',
+        Compressor: 'SQUASHY BOI',
+        Delay: 'BOINGUS',
+        Chorus: 'SPOOP'
+    };
+    
     container.innerHTML = Object.entries(filterConfigs).map(([name, params]) => `
         <div class="fx-pedal ${state.filters[name].enabled ? 'active' : ''}" data-filter="${name}">
             <div class="fx-pedal-header">
                 <div class="fx-pedal-name">
                     <div class="led ${state.filters[name].enabled ? 'active' : ''}"></div>
-                    <span>${name}</span>
+                    <span>${displayNames[name]}</span>
                 </div>
                 <div class="power-switch ${state.filters[name].enabled ? 'on' : ''}" data-filter="${name}"></div>
             </div>
@@ -3014,6 +3091,50 @@ function loadFromBrowser() {
     }
 }
 
+function loadFromFile(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        try {
+            let content = e.target.result;
+            
+            // If it's a .ts file, try to extract the config object
+            if (file.name.endsWith('.ts')) {
+                // Look for the audioPatch export or config object
+                const configMatch = content.match(/export\s+const\s+audioPatch\s*=\s*({[\s\S]*?});?\s*$/) ||
+                                   content.match(/const\s+config\s*=\s*({[\s\S]*?});/);
+                if (configMatch) {
+                    // Convert to valid JSON by fixing property names
+                    let jsonStr = configMatch[1]
+                        .replace(/([{,]\s*)([a-zA-Z_][a-zA-Z0-9_]*)\s*:/g, '$1"$2":')
+                        .replace(/'/g, '"')
+                        .replace(/,\s*}/g, '}')
+                        .replace(/,\s*]/g, ']');
+                    content = jsonStr;
+                }
+            }
+            
+            const parsed = JSON.parse(content);
+            
+            // Validate structure
+            if (parsed.trades && parsed.liquidations && parsed.positionEvents && parsed.filters) {
+                Object.assign(state, parsed);
+                renderAll();
+                showToast('Loaded: ' + file.name);
+            } else {
+                showToast('Invalid schema structure');
+            }
+        } catch (err) {
+            console.error('Parse error:', err);
+            showToast('Failed to parse file');
+        }
+    };
+    reader.readAsText(file);
+    event.target.value = ''; // Reset for re-upload
+}
+
 function showToast(msg) {
     document.querySelectorAll('.toast').forEach(t => t.remove());
     const toast = document.createElement('div');
@@ -3094,11 +3215,7 @@ function selectScale(section, scaleKey) {
     
     // Show toast
     const scaleName = SCALES[scaleKey].name;
-    if (scaleKey === 'astley') {
-        showToast('🎵 Never gonna give you up...');
-    } else {
-        showToast(`Applied ${scaleName} scale to ${section}`);
-    }
+    showToast(`Applied ${scaleName} scale to ${section}`);
 }
 
 function getNoteFromInterval(rootNote, rootOctave, interval, direction) {
@@ -3213,23 +3330,36 @@ function applyScaleToScripts(category, scaleKey) {
 
 function applyScaleToPositions(scaleKey) {
     const positionTypes = ['openLong', 'openShort', 'closeProfit', 'closeLoss'];
+    
+    // Astley uses pre-defined chords
+    if (scaleKey === 'astley') {
+        positionTypes.forEach(type => {
+            state.positions[type] = ASTLEY_CHORDS[type].map(n => ({ ...n }));
+        });
+        renderChordBuilder();
+        return;
+    }
+    
     const directions = ['buy', 'sell', 'buy', 'sell']; // Long/Profit=ascending, Short/Loss=descending
     const rootOctave = 5;
     const rootNote = 'E';
     
     positionTypes.forEach((type, typeIdx) => {
         const direction = directions[typeIdx];
-        // Use level 3 for positions (4 notes, or full Astley)
+        const isProfit = type === 'closeProfit';
+        const isLoss = type === 'closeLoss';
+        
+        // Use level 3 for positions (5 notes)
         const notes = generateScaleNotes(scaleKey, 3, direction, rootNote, rootOctave);
         
-        state.positions[type] = notes.map((n, i) => ({
+        state.positions[type] = notes.slice(0, 5).map((n, i) => ({
             frequency: n.freq,
-            gain: 0.5 + (i === 0 ? 0.1 : 0),
-            osc: n.osc,
-            fadeIn: 0.01,
-            holdDuration: 0.1 + (i * 0.02),
-            fadeOut: 0.25,
-            delay: n.delay
+            gain: 0.16 - (i * 0.015),
+            osc: i < 3 ? 'triangle' : 'sine',
+            fadeIn: isProfit ? 0.012 : isLoss ? 0.018 : 0.015,
+            holdDuration: isProfit ? 0.3 : isLoss ? 0.22 : 0.25,
+            fadeOut: isProfit ? 0.55 : isLoss ? 0.5 : 0.45,
+            delay: i * 0.008
         }));
     });
     
