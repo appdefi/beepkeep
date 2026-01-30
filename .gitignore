@@ -1,0 +1,10 @@
+# Ignore everything
+*
+
+# Keep beepkeep essentials
+!.gitignore
+!render.yaml
+!index.html
+!beepkeep.html
+!assets/
+!assets/**
